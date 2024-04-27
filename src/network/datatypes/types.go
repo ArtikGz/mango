@@ -201,7 +201,7 @@ func (d *Double) Bytes() (buffer []byte) {
 	return buffer
 }
 
-type Long int64 // =====================================================
+type Long uint64 // =====================================================
 
 func (l *Long) ReadFrom(reader io.Reader) (n int64, err error) {
 	err = binary.Read(reader, binary.BigEndian, l)

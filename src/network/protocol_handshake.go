@@ -12,5 +12,5 @@ func HandleHandshakePacket(conn *Connection, data *[]byte) {
 	var handshake c2s.Handshake
 	handshake.ReadPacket(reader)
 	conn.state = Protocol(handshake.NextState)
-	logger.Info("Handshake, next state -> %s", conn.state.ToString())
+	logger.Info("Handshake, next state -> %s", conn.state)
 }
