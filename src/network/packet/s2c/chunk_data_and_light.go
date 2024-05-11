@@ -7,9 +7,9 @@ import (
 )
 
 type ChunkDataAndLight struct {
-	Header packet.PacketHeader
-	ChunkX dt.Int
-	ChunkZ dt.Int
+	Header        packet.PacketHeader
+	ChunkPosition dt.ChunkPosition
+	ChunkSections []dt.ChunkSection
 }
 
 func (pk *ChunkDataAndLight) Bytes() []byte {
@@ -17,8 +17,7 @@ func (pk *ChunkDataAndLight) Bytes() []byte {
 	var data []byte
 
 	// chunk coords
-	data = append(data, pk.ChunkX.Bytes()...)
-	data = append(data, pk.ChunkZ.Bytes()...)
+	data = append(data, pk.ChunkPosition.Bytes()...)
 
 	// heightmap
 	heightmaps := [37]int64{}
@@ -33,33 +32,10 @@ func (pk *ChunkDataAndLight) Bytes() []byte {
 
 	// chunk data (20 subchunks)
 	chunkData := []byte{}
-
-	// FIXME: sends a chunk where the first subchunk is full of stone and the rest is air
-	for i := 0; i < 24; i++ {
-
-		blockID := dt.VarInt(0x001)
-		if i > 0 {
-			blockID = dt.VarInt(0x000)
-		}
-
-		// chunk blocks (4096 entries)
-		// chunk biomes (64 4x4x4 sections)
-		chunkSection := dt.ChunkSection{
-			NonAirBlocks: 16 * 16 * 16,
-			BlockStates: dt.PalettedContainer{
-				BytesPerEntry: 0,
-				Palette:       []dt.VarInt{blockID}, // stone
-				Data:          []dt.Long{},
-			},
-			Biomes: dt.PalettedContainer{
-				BytesPerEntry: 0,
-				Palette:       []dt.VarInt{55}, // the_void ?
-				Data:          []dt.Long{},
-			},
-		}
-
-		chunkData = append(chunkData, chunkSection.Bytes()...)
+	for _, section := range pk.ChunkSections {
+		chunkData = append(chunkData, section.Bytes()...)
 	}
+
 	chunkDataLength := dt.VarInt(len(chunkData))
 	data = append(data, chunkDataLength.Bytes()...)
 	data = append(data, chunkData...)

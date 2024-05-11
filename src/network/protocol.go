@@ -9,7 +9,7 @@ const (
 	PLAY
 )
 
-func (p Protocol) ToString() string {
+func (p Protocol) String() string {
 	switch p {
 	case SHAKE:
 		return "HANDSHAKE"
