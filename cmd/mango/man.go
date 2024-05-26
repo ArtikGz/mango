@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	configPath   = flag.String("c", "config.yml", "-c /path/to/config_file.yml")
+	configPath   = flag.String("c", "config.json", "-c /path/to/config_file.json")
 	profilerPort = flag.Int("p", 0, "-p <profiler port>")
 )
 
