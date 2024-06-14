@@ -1,19 +1,18 @@
 package config
 
 import (
+	"encoding/json"
 	"log"
 	"os"
 	"strings"
-
-	"github.com/go-yaml/yaml"
 )
 
 var gconfig GlobalConfig
 
 type GlobalConfig struct {
-	Server   ServerConfig   `yaml:"server"`
-	Logger   LoggerConfig   `yaml:"logger"`
-	Profiler ProfilerConfig `yaml:"profiler"`
+	Server   ServerConfig   `json:"server"`
+	Logger   LoggerConfig   `json:"logger"`
+	Profiler ProfilerConfig `json:"profiler"`
 }
 
 func Motd() string {
@@ -56,19 +55,19 @@ func LogLevel() LoggerLevel {
 }
 
 type ServerConfig struct {
-	Host     string `yaml:"host"`
-	Port     int    `yaml:"port"`
-	Online   bool   `yaml:"online"`
-	Motd     string `yaml:"motd"`
-	Protocol int    `yaml:"protocol"`
+	Host     string `json:"host"`
+	Port     int    `json:"port"`
+	Online   bool   `json:"online"`
+	Motd     string `json:"motd"`
+	Protocol int    `json:"protocol"`
 }
 
 type LoggerConfig struct {
-	Level string `yaml:"level"`
+	Level string `json:"level"`
 }
 
 type ProfilerConfig struct {
-	Port int `yaml:"port"`
+	Port int `json:"port"`
 }
 
 func ProfilerPort() int {
@@ -92,5 +91,5 @@ func Parse(path string) {
 		log.Fatal(err)
 	}
 
-	yaml.Unmarshal([]byte(file), &gconfig)
+	json.Unmarshal([]byte(file), &gconfig)
 }
