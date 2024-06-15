@@ -8,7 +8,7 @@ import (
 
 	"mango/src/config"
 	"mango/src/logger"
-	mango "mango/src/server"
+	mango "mango/src/tcp"
 )
 
 var (
@@ -25,7 +25,11 @@ func main() {
 		go runProfiler()
 	}
 
-	server := mango.NewServer()
+	server, err := mango.NewTcpServer(config.Host(), config.Port())
+	if err != nil {
+		logger.Fatal("Server couldn't start")
+	}
+
 	server.Start()
 }
 

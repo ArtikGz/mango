@@ -10,7 +10,7 @@ type KeepAlive struct {
 	KeepAliveID dt.Long
 }
 
-func (pk *KeepAlive) Bytes() []byte {
+func (pk KeepAlive) Bytes() []byte {
 	pk.Header.PacketID = 0x23
 	var data []byte
 

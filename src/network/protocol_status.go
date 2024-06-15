@@ -7,9 +7,10 @@ import (
 	"mango/src/network/packet"
 	"mango/src/network/packet/c2s"
 	"mango/src/network/packet/s2c"
+	"net"
 )
 
-func HandleStatusPacket(conn *Connection, data *[]byte) {
+func HandleStatusPacket(conn *net.TCPConn, data *[]byte) []Packet {
 	reader := bytes.NewReader(*data)
 
 	var header packet.PacketHeader
@@ -25,8 +26,7 @@ func HandleStatusPacket(conn *Connection, data *[]byte) {
 		var statusResponse s2c.StatusResponse
 		statusResponse.StatusData.Protocol = uint16(config.Protocol())
 
-		packetBytes := statusResponse.Bytes()
-		conn.outgoingPackets <- &packetBytes
+		return []Packet{statusResponse}
 
 	case 0x01: // ping packet
 		var ping c2s.PingRequest
@@ -35,7 +35,8 @@ func HandleStatusPacket(conn *Connection, data *[]byte) {
 		var pong s2c.PingResponse
 		pong.Timestamp = ping.Timestamp
 
-		packetBytes := pong.Bytes()
-		conn.outgoingPackets <- &packetBytes
+		return []Packet{pong}
 	}
+
+	return nil
 }

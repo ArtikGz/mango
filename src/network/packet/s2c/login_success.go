@@ -11,7 +11,7 @@ type LoginSuccess struct {
 	UUID     []byte
 }
 
-func (pk *LoginSuccess) Bytes() []byte {
+func (pk LoginSuccess) Bytes() []byte {
 	pk.Header.PacketID = 0x02
 	var data []byte
 

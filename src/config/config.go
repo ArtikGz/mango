@@ -2,17 +2,20 @@ package config
 
 import (
 	"encoding/json"
+	"io"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
 var gconfig GlobalConfig
 
 type GlobalConfig struct {
-	Server   ServerConfig   `json:"server"`
-	Logger   LoggerConfig   `json:"logger"`
-	Profiler ProfilerConfig `json:"profiler"`
+	Server     ServerConfig   `json:"server"`
+	Logger     LoggerConfig   `json:"logger"`
+	Profiler   ProfilerConfig `json:"profiler"`
+	ConfigPath string
 }
 
 func Motd() string {
@@ -86,10 +89,25 @@ const (
 )
 
 func Parse(path string) {
-	file, err := os.ReadFile(path)
+	file, err := os.Open(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	text, err := io.ReadAll(file)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	json.Unmarshal([]byte(file), &gconfig)
+	json.Unmarshal(text, &gconfig)
+
+	gconfig.ConfigPath, err = filepath.Abs(path)
+	if err != nil {
+		gconfig.ConfigPath = file.Name()
+	}
+}
+
+func GetConfigPath() string {
+	return gconfig.ConfigPath
 }

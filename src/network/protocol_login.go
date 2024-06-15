@@ -9,9 +9,12 @@ import (
 	"mango/src/network/packet"
 	"mango/src/network/packet/c2s"
 	"mango/src/network/packet/s2c"
+	"net"
 )
 
-func HandleLoginPacket(conn *Connection, data *[]byte) {
+func HandleLoginPacket(conn *net.TCPConn, data *[]byte) []Packet {
+	packets := make([]Packet, 0)
+
 	reader := bytes.NewReader(*data)
 
 	var header packet.PacketHeader
@@ -26,7 +29,7 @@ func HandleLoginPacket(conn *Connection, data *[]byte) {
 
 		if config.IsOnline() {
 			// TODO: implement cypher and return EncryptionRequest
-
+			logger.Error("Online mod is not yet supported, please, change online to false in '%s'.", config.GetConfigPath())
 		} else { // Offline mode, return LoginSuccess
 			var logingSuccess s2c.LoginSuccess
 			logingSuccess.Username = loginStart.Name
@@ -34,29 +37,27 @@ func HandleLoginPacket(conn *Connection, data *[]byte) {
 				logingSuccess.UUID = loginStart.UUID
 			}
 
-			packetBytes := logingSuccess.Bytes()
-			conn.outgoingPackets <- &packetBytes
 			logger.Debug("Login Success: %+v", logingSuccess)
-			conn.state = PLAY
 
 			// send init PLAY packets (Login (Play), Default Spawn Position, etc.)
-			onSuccessfulLogin(conn)
+			packets = append(packets, logingSuccess)
+			packets = append(packets, onSuccessfulLogin()...)
 		}
 	}
+
+	return packets
 }
 
-func onSuccessfulLogin(conn *Connection) {
-	var loginPlay s2c.LoginPlay
-	packetBytes := loginPlay.Bytes()
-	conn.outgoingPackets <- &packetBytes
+func onSuccessfulLogin() []Packet {
+	packets := make([]Packet, 0)
 
-	var spawnPos s2c.SetDefaultSpawnPosition
-	packetBytes1 := spawnPos.Bytes()
-	conn.outgoingPackets <- &packetBytes1
+	packets = append(packets, s2c.LoginPlay{})
+	packets = append(packets, s2c.SetDefaultSpawnPosition{})
 
 	// send 7X7 chunk square
-	for _, chunk := range managers.GetBlockManager().GetChunks() {
-		packetBytesChunk := chunk.Bytes()
-		conn.outgoingPackets <- &packetBytesChunk
+	for _, chunkPacket := range managers.GetBlockManager().GetChunks() {
+		packets = append(packets, chunkPacket)
 	}
+
+	return packets
 }

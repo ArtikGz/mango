@@ -1,5 +1,7 @@
 package network
 
+import "net"
+
 type Protocol int
 
 const (
@@ -24,15 +26,17 @@ func (p Protocol) String() string {
 	}
 }
 
-func HandlePacket(conn *Connection, packet *[]byte) {
-	switch conn.state {
+func HandlePacket(state Protocol, conn *net.TCPConn, packet *[]byte) []Packet {
+	switch state {
 	case SHAKE:
-		HandleHandshakePacket(conn, packet)
+		return HandleHandshakePacket(conn, packet)
 	case STATUS:
-		HandleStatusPacket(conn, packet)
+		return HandleStatusPacket(conn, packet)
 	case LOGIN:
-		HandleLoginPacket(conn, packet)
+		return HandleLoginPacket(conn, packet)
 	case PLAY:
-		HandlePlayPacket(conn, packet)
+		return HandlePlayPacket(conn, packet)
 	}
+
+	return nil
 }
