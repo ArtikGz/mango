@@ -10,7 +10,7 @@ type PingResponse struct {
 	Timestamp dt.Long
 }
 
-func (pk *PingResponse) Bytes() []byte {
+func (pk PingResponse) Bytes() []byte {
 	pk.Header.PacketID = 0x01
 	var data []byte
 	data = append(data, pk.Timestamp.Bytes()...)

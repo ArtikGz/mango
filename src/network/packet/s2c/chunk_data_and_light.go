@@ -12,7 +12,7 @@ type ChunkDataAndLight struct {
 	ChunkSections []dt.ChunkSection
 }
 
-func (pk *ChunkDataAndLight) Bytes() []byte {
+func (pk ChunkDataAndLight) Bytes() []byte {
 	pk.Header.PacketID = 0x24
 	var data []byte
 

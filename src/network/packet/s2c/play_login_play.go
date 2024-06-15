@@ -30,7 +30,7 @@ type LoginPlay struct {
 	DeathLocation       dt.Position
 }
 
-func (pk *LoginPlay) Bytes() []byte {
+func (pk LoginPlay) Bytes() []byte {
 	// return pk.getRegularBytes() // TODO: use this version at some point
 	return pk.getStoredPacketBytes()
 }

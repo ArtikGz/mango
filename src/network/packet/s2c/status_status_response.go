@@ -15,11 +15,11 @@ type StatusData struct {
 	Protocol uint16
 }
 
-func (pk *StatusResponse) getStatusPayload() string {
+func (pk StatusResponse) getStatusPayload() string {
 	return dt.GetDemoServerStatus(int(pk.StatusData.Protocol))
 }
 
-func (pk *StatusResponse) Bytes() []byte {
+func (pk StatusResponse) Bytes() []byte {
 	pk.Header.PacketID = 0x00
 	pk.JsonPayload = dt.String(pk.getStatusPayload())
 

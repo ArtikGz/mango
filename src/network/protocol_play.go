@@ -7,9 +7,10 @@ import (
 	"mango/src/managers"
 	"mango/src/network/packet"
 	"mango/src/network/packet/c2s"
+	"net"
 )
 
-func HandlePlayPacket(conn *Connection, data *[]byte) {
+func HandlePlayPacket(conn *net.TCPConn, data *[]byte) []Packet {
 	reader := bytes.NewReader(*data)
 
 	var header packet.PacketHeader
@@ -22,6 +23,8 @@ func HandlePlayPacket(conn *Connection, data *[]byte) {
 	case 0x1d:
 		handlePlayerAction(reader)
 	}
+
+	return nil
 }
 
 func handlePlayerAction(reader io.Reader) {
@@ -36,6 +39,4 @@ func handlePlayerAction(reader io.Reader) {
 	case c2s.ACTION_STATUS_CANCELLED_DIGGING:
 	case c2s.ACTION_STATUS_FINISHED_DIGGING:
 	}
-
-	logger.Debug("%+v", packet)
 }

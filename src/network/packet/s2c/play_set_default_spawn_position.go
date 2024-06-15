@@ -11,7 +11,7 @@ type SetDefaultSpawnPosition struct {
 	Angle    dt.Float
 }
 
-func (pk *SetDefaultSpawnPosition) Bytes() []byte {
+func (pk SetDefaultSpawnPosition) Bytes() []byte {
 	pk.Header.PacketID = 0x50
 	var data []byte
 
