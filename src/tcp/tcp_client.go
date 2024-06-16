@@ -1,6 +1,7 @@
 package tcp
 
 import (
+	"fmt"
 	"mango/src/logger"
 	"mango/src/network"
 	"mango/src/network/packet/c2s"
@@ -22,7 +23,8 @@ type TcpClient struct {
 	once sync.Once
 	quit chan struct{}
 
-	state network.Protocol
+	state     network.Protocol
+	emitEvent func(any)
 }
 
 func NewTcpClient(conn *net.TCPConn) *TcpClient {
@@ -61,6 +63,7 @@ func (c *TcpClient) handleIncoming() {
 		if packets != nil {
 			for _, packet := range packets {
 				c.nextState(packet)
+				c.processEvent(packet)
 
 				if n, ok := packet.(network.OutgoingPacket); ok {
 					c.outgoing <- n.Bytes()
@@ -109,5 +112,18 @@ func (c *TcpClient) nextState(packet network.Packet) {
 		c.state = network.Protocol(n.NextState)
 	} else if _, ok := packet.(s2c.LoginSuccess); ok {
 		c.state = network.PLAY
+	}
+}
+
+func (c *TcpClient) processEvent(packet network.Packet) {
+	if n, ok := packet.(s2c.LoginSuccess); ok {
+		event := BroadcastPacketEvent{
+			packet: s2c.SystemChatMessage{
+				Content: fmt.Sprintf("[+] %s joined the server.", n.Username),
+				Overlay: false,
+			}.Bytes(),
+		}
+
+		c.emitEvent(event)
 	}
 }
