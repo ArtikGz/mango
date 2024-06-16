@@ -55,18 +55,28 @@ func (c *TcpClient) handleIncoming() {
 	for {
 		pkBytes, err := network.ReadFrom(c.conn, c.compression)
 		if err != nil {
+			logger.Warn("Error reading connection")
 			c.crash = err
 			return
 		}
 
-		packets := network.HandlePacket(c.state, c.conn, &pkBytes)
-		if packets != nil {
-			for _, packet := range packets {
-				c.nextState(packet)
-				c.processEvent(packet)
+		if len(pkBytes) > 0 {
+			select {
+			case <-c.quit:
+				logger.Debug("Quitting handleIncomming due to c.quit closed.")
+				return
+			default: // Nothing
+			}
 
-				if n, ok := packet.(network.OutgoingPacket); ok {
-					c.outgoing <- n.Bytes()
+			packets := network.HandlePacket(c.state, c.conn, &pkBytes)
+			if packets != nil {
+				for _, packet := range packets {
+					if n, ok := packet.(network.OutgoingPacket); ok {
+						c.outgoing <- n.Bytes()
+					}
+
+					c.nextState(packet)
+					c.processEvent(packet)
 				}
 			}
 		}
@@ -84,12 +94,15 @@ func (c *TcpClient) handleOutgoing() {
 	for {
 		select {
 		case <-c.quit:
+			logger.Debug("Quittin handleOutgoing due to c.quit closed.")
 			return
 		case msg, ok := <-c.outgoing:
 			if !ok {
+				logger.Debug("Quitting handleOutgoing due to !ok")
 				return
 			}
 			if err := network.WriteTo(c.conn, msg, c.compression); err != nil {
+				logger.Debug("Quitting handleOutgoing due to WriteTo error")
 				c.crash = err
 				return
 			}
@@ -100,6 +113,12 @@ func (c *TcpClient) handleOutgoing() {
 
 func (c *TcpClient) Close() {
 	c.once.Do(func() {
+		if c.crash != nil {
+			c.emitEvent(ClientCrashEvent{c, c.crash})
+		} else {
+			c.emitEvent(ClientDisconnectEvent{c})
+		}
+
 		close(c.quit)
 		close(c.incoming)
 		close(c.outgoing)
@@ -122,6 +141,12 @@ func (c *TcpClient) processEvent(packet network.Packet) {
 				Content: fmt.Sprintf("[+] %s joined the server.", n.Username),
 				Overlay: false,
 			}.Bytes(),
+		}
+
+		c.emitEvent(event)
+	} else if n, ok := packet.(s2c.BlockUpdate); ok {
+		event := BroadcastPacketEvent{
+			packet: n.Bytes(),
 		}
 
 		c.emitEvent(event)
