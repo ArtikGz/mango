@@ -7,7 +7,7 @@ import (
 
 type SystemChatMessage struct {
 	Header  packet.PacketHeader
-	Content dt.String // The text message
+	Content string // The text message
 	Overlay dt.Boolean
 }
 

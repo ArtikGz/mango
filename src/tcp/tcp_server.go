@@ -3,23 +3,9 @@ package tcp
 import (
 	"fmt"
 	"mango/src/logger"
+	"mango/src/network"
 	"net"
 	"sync"
-)
-
-type ( // events
-	ClientConnectEvent struct {
-		conn *net.TCPConn
-	}
-
-	ClientDisconnectEvent struct {
-		client *TcpClient
-	}
-
-	ClientCrashEvent struct {
-		client *TcpClient
-		err    error
-	}
 )
 
 type TcpServer struct {
@@ -82,6 +68,9 @@ func (s *TcpServer) eventloop() {
 				err1 := conn.SetKeepAlive(true)
 				err2 := conn.SetNoDelay(true)
 				client := NewTcpClient(conn)
+				client.emitEvent = func(event any) {
+					s.events <- event
+				}
 
 				if err1 != nil {
 					s.events <- ClientCrashEvent{client, err1}
@@ -114,6 +103,10 @@ func (s *TcpServer) eventloop() {
 
 				// handle closing in another thread
 				go client.Close()
+			case BroadcastPacketEvent:
+				for client := range s.clients {
+					network.WriteTo(client.conn, event.(BroadcastPacketEvent).packet, client.compression)
+				}
 			}
 		}
 	}
