@@ -21,3 +21,7 @@ func (pk SetDefaultSpawnPosition) Bytes() []byte {
 
 	return data
 }
+
+func (pk SetDefaultSpawnPosition) Broadcast() bool {
+	return false
+}

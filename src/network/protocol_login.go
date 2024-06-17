@@ -2,6 +2,7 @@ package network
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"mango/src/config"
 	"mango/src/logger"
@@ -9,10 +10,9 @@ import (
 	"mango/src/network/packet"
 	"mango/src/network/packet/c2s"
 	"mango/src/network/packet/s2c"
-	"net"
 )
 
-func HandleLoginPacket(conn *net.TCPConn, data *[]byte) []Packet {
+func HandleLoginPacket(data *[]byte) []Packet {
 	packets := make([]Packet, 0)
 
 	reader := bytes.NewReader(*data)
@@ -31,17 +31,22 @@ func HandleLoginPacket(conn *net.TCPConn, data *[]byte) []Packet {
 			// TODO: implement cypher and return EncryptionRequest
 			logger.Error("Online mod is not yet supported, please, change online to false in '%s'.", config.GetConfigPath())
 		} else { // Offline mode, return LoginSuccess
-			var logingSuccess s2c.LoginSuccess
-			logingSuccess.Username = loginStart.Name
+			var loginSuccess s2c.LoginSuccess
+			loginSuccess.Username = loginStart.Name
 			if loginStart.HasUUID {
-				logingSuccess.UUID = loginStart.UUID
+				loginSuccess.UUID = loginStart.UUID
 			}
 
-			logger.Debug("Login Success: %+v", logingSuccess)
+			logger.Debug("Login Success: %+v", loginSuccess)
 
 			// send init PLAY packets (Login (Play), Default Spawn Position, etc.)
-			packets = append(packets, logingSuccess)
+			packets = append(packets, loginSuccess)
 			packets = append(packets, onSuccessfulLogin()...)
+			packets = append(packets, s2c.SystemChatMessage{
+				Content:         fmt.Sprintf("[+] %s joined the server.", loginSuccess.Username),
+				Overlay:         false,
+				ShouldBroadcast: true,
+			})
 		}
 	}
 

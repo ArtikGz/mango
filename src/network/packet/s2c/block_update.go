@@ -22,3 +22,8 @@ func (pk BlockUpdate) Bytes() []byte {
 
 	return data
 }
+
+func (pk BlockUpdate) Broadcast() bool {
+	// We assume that we always want to broadcast a block update
+	return true
+}

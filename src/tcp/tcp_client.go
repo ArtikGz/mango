@@ -1,7 +1,6 @@
 package tcp
 
 import (
-	"fmt"
 	"mango/src/logger"
 	"mango/src/network"
 	"mango/src/network/packet/c2s"
@@ -63,21 +62,22 @@ func (c *TcpClient) handleIncoming() {
 		if len(pkBytes) > 0 {
 			select {
 			case <-c.quit:
-				logger.Debug("Quitting handleIncomming due to c.quit closed.")
+				logger.Debug("Quitting handleIncoming due to c.quit closed.")
 				return
 			default: // Nothing
 			}
 
-			packets := network.HandlePacket(c.state, c.conn, &pkBytes)
-			if packets != nil {
-				for _, packet := range packets {
-					if n, ok := packet.(network.OutgoingPacket); ok {
+			packets := network.HandlePacket(c.state, &pkBytes)
+			for _, packet := range packets {
+				if n, ok := packet.(network.OutgoingPacket); ok {
+					if n.Broadcast() {
+						c.emitEvent(BroadcastPacketEvent{n.Bytes()})
+					} else {
 						c.outgoing <- n.Bytes()
 					}
-
-					c.nextState(packet)
-					c.processEvent(packet)
 				}
+
+				c.nextState(packet)
 			}
 		}
 	}
@@ -131,24 +131,5 @@ func (c *TcpClient) nextState(packet network.Packet) {
 		c.state = network.Protocol(n.NextState)
 	} else if _, ok := packet.(s2c.LoginSuccess); ok {
 		c.state = network.PLAY
-	}
-}
-
-func (c *TcpClient) processEvent(packet network.Packet) {
-	if n, ok := packet.(s2c.LoginSuccess); ok {
-		event := BroadcastPacketEvent{
-			packet: s2c.SystemChatMessage{
-				Content: fmt.Sprintf("[+] %s joined the server.", n.Username),
-				Overlay: false,
-			}.Bytes(),
-		}
-
-		c.emitEvent(event)
-	} else if n, ok := packet.(s2c.BlockUpdate); ok {
-		event := BroadcastPacketEvent{
-			packet: n.Bytes(),
-		}
-
-		c.emitEvent(event)
 	}
 }

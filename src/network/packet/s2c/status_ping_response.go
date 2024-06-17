@@ -18,3 +18,7 @@ func (pk PingResponse) Bytes() []byte {
 
 	return data
 }
+
+func (pk PingResponse) Broadcast() bool {
+	return false
+}

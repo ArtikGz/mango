@@ -131,3 +131,7 @@ func (pk *LoginPlay) populatePacket() {
 	pk.DeathDimensionName = ""
 	pk.DeathLocation = dt.Position{X: 0, Y: 0, Z: 0}
 }
+
+func (pk LoginPlay) Broadcast() bool {
+	return false
+}
