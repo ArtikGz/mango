@@ -7,10 +7,9 @@ import (
 	"mango/src/network/packet"
 	"mango/src/network/packet/c2s"
 	"mango/src/network/packet/s2c"
-	"net"
 )
 
-func HandleStatusPacket(conn *net.TCPConn, data *[]byte) []Packet {
+func HandleStatusPacket(data *[]byte) []Packet {
 	reader := bytes.NewReader(*data)
 
 	var header packet.PacketHeader

@@ -80,3 +80,7 @@ func (pk ChunkDataAndLight) Bytes() []byte {
 
 	return data
 }
+
+func (pk ChunkDataAndLight) Broadcast() bool {
+	return false
+}

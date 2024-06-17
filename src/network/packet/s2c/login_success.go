@@ -30,3 +30,7 @@ func (pk LoginSuccess) Bytes() []byte {
 
 	return data
 }
+
+func (pk LoginSuccess) Broadcast() bool {
+	return false
+}

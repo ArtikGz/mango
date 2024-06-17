@@ -2,8 +2,6 @@ package config
 
 import (
 	"encoding/json"
-	"io"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -88,23 +86,40 @@ const (
 	OFF
 )
 
-func Parse(path string) {
-	file, err := os.Open(path)
+func Parse(path string) error {
+	text, err := os.ReadFile(path)
 	if err != nil {
-		log.Fatal(err)
-	}
-	defer file.Close()
-
-	text, err := io.ReadAll(file)
-	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
-	json.Unmarshal(text, &gconfig)
+	if err = json.Unmarshal(text, &gconfig); err != nil {
+		return err
+	}
 
 	gconfig.ConfigPath, err = filepath.Abs(path)
 	if err != nil {
-		gconfig.ConfigPath = file.Name()
+		gconfig.ConfigPath = path
+	}
+
+	return nil
+}
+
+func LoadDefaultConfig() {
+	gconfig = GlobalConfig{
+		Server: ServerConfig{
+			Host:     "127.0.0.1",
+			Port:     25565,
+			Online:   false,
+			Motd:     "Powered by man.go",
+			Protocol: 762,
+		},
+		Logger: LoggerConfig{
+			Level: "INFO",
+		},
+		Profiler: ProfilerConfig{
+			Port: 8080,
+		},
+		ConfigPath: "DEFAULT_CONFIG",
 	}
 }
 

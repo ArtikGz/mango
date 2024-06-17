@@ -82,7 +82,6 @@ func (s *TcpServer) eventloop() {
 				}
 
 			case ClientCrashEvent:
-				defer s.wg.Done()
 				client := event.(ClientCrashEvent).client
 				err := event.(ClientCrashEvent).err
 				if err != nil {
@@ -93,19 +92,27 @@ func (s *TcpServer) eventloop() {
 				delete(s.clients, client)
 
 				// handle closing in another thread
-				go client.Close()
+				go func() {
+					defer s.wg.Done()
+					client.Close()
+				}()
 
 			case ClientDisconnectEvent:
-				defer s.wg.Done()
 				client := event.(ClientDisconnectEvent).client
 				logger.Info("Client %s disconnected", client.conn.RemoteAddr().String())
 				delete(s.clients, client)
 
 				// handle closing in another thread
-				go client.Close()
+				go func() {
+					defer s.wg.Done()
+					client.Close()
+				}()
 			case BroadcastPacketEvent:
 				for client := range s.clients {
-					network.WriteTo(client.conn, event.(BroadcastPacketEvent).packet, client.compression)
+					err := network.WriteTo(client.conn, event.(BroadcastPacketEvent).packet, client.compression)
+					if err != nil {
+						logger.Error("An error occurred while sending packet to client: %s", err.Error())
+					}
 				}
 			}
 		}

@@ -30,3 +30,7 @@ func (pk StatusResponse) Bytes() []byte {
 
 	return data
 }
+
+func (pk StatusResponse) Broadcast() bool {
+	return false
+}

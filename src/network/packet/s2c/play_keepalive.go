@@ -19,3 +19,7 @@ func (pk KeepAlive) Bytes() []byte {
 
 	return data
 }
+
+func (pk KeepAlive) Broadcast() bool {
+	return false
+}

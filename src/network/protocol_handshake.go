@@ -3,10 +3,9 @@ package network
 import (
 	"bytes"
 	"mango/src/network/packet/c2s"
-	"net"
 )
 
-func HandleHandshakePacket(conn *net.TCPConn, data *[]byte) []Packet {
+func HandleHandshakePacket(data *[]byte) []Packet {
 	reader := bytes.NewReader(*data)
 
 	var handshake c2s.Handshake

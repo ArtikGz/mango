@@ -1,25 +1,25 @@
 package managers
 
-var userManagerInstance userManager
+var userManagerInstance UserManager
 
 func init() {
-	userManagerInstance = userManager{
-		users: make([]User, 0),
+	userManagerInstance = UserManager{
+		users: make(map[string]User),
 	}
 }
 
-type userManager struct {
-	users []User
+type UserManager struct {
+	users map[string]User
 }
 
 type User struct {
 	Name string
 }
 
-func GetUserManager() userManager {
+func GetUserManager() UserManager {
 	return userManagerInstance
 }
 
-func (um userManager) AddUser(user User) {
-	um.users = append(um.users, user)
+func (um UserManager) AddUser(user User) {
+	um.users[user.Name] = user
 }

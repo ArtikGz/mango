@@ -18,7 +18,11 @@ var (
 
 func main() {
 	flag.Parse()
-	config.Parse(*configPath)
+	err := config.Parse(*configPath)
+	if err != nil {
+		logger.Error("Couldn't read config due to an error, using the default configuration... (err: %s)", err)
+		config.LoadDefaultConfig()
+	}
 
 	// profiler
 	if *profilerPort != 0 {
