@@ -130,6 +130,28 @@ func (s *String) Bytes() (buffer []byte) {
 
 type VarInt int32 // =====================================================
 
+func ReadVarInt(r io.Reader) (VarInt, int64, error) {
+	var vi VarInt
+	n, err := vi.ReadFrom(r)
+	if err != nil {
+		return 0, n, err
+	}
+
+	return vi, n, nil
+}
+
+func (vi VarInt) Length() int {
+	if vi == 0 {
+		return 1
+	}
+	i := 0
+	for vi > 0 {
+		vi >>= 7
+		i++
+	}
+	return i
+}
+
 func (vi *VarInt) ReadFrom(reader io.Reader) (n int64, err error) {
 	var value uint32
 
