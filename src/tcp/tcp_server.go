@@ -51,9 +51,11 @@ func (s *TcpServer) Start() {
 
 // handles all client connection events
 func (s *TcpServer) eventloop() {
-	logger.Info("eventloop: Starting")
-	defer s.wg.Done()
-	defer logger.Info("eventloop: Quitting")
+	logger.Debug("eventloop: Starting")
+	defer func() {
+		logger.Debug("eventloop: Quitting")
+		s.wg.Done()
+	}()
 
 	for {
 		select {
@@ -162,7 +164,7 @@ func (s *TcpServer) Close() {
 	}
 
 	close(s.quit)
-	s.listener.Close()
+	_ = s.listener.Close()
 	s.wg.Wait()
 	close(s.events)
 }

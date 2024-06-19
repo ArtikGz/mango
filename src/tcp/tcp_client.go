@@ -1,12 +1,15 @@
 package tcp
 
 import (
+	"io"
 	"mango/src/logger"
 	"mango/src/network"
+	dt "mango/src/network/datatypes"
 	"mango/src/network/packet/c2s"
 	"mango/src/network/packet/s2c"
 	"net"
 	"sync"
+	"time"
 )
 
 type TcpClient struct {
@@ -44,18 +47,26 @@ func NewTcpClient(conn *net.TCPConn) *TcpClient {
 }
 
 func (c *TcpClient) handleIncoming() {
-	logger.Info("handleIncoming: Starting")
+	logger.Debug("handleIncoming: Starting")
 	defer func() {
-		logger.Info("handleIncoming: Quitting")
+		logger.Debug("handleIncoming: Quitting")
 		c.wg.Done()
 		go c.Close()
 	}()
 
 	for {
+		if err := c.conn.SetReadDeadline(time.Now().Add(10 * time.Second)); err != nil {
+			logger.Error("Error setting the connection deadline: %s", err.Error())
+			c.crash = err
+			return
+		}
+
 		pkBytes, err := network.ReadFrom(c.conn, c.compression)
 		if err != nil {
-			logger.Warn("Error reading connection")
-			c.crash = err
+			if err != io.EOF {
+				logger.Error("Error reading from client: %s", err.Error())
+				c.crash = err
+			}
 			return
 		}
 
@@ -67,7 +78,13 @@ func (c *TcpClient) handleIncoming() {
 			default: // Nothing
 			}
 
-			packets := network.HandlePacket(c.state, &pkBytes)
+			packets, err := network.HandlePacket(c.state, pkBytes)
+			if err != nil {
+				logger.Error("Error handling packet from client: %s", err.Error())
+				c.crash = err
+				return
+			}
+
 			for _, packet := range packets {
 				if n, ok := packet.(network.OutgoingPacket); ok {
 					if n.Broadcast() {
@@ -84,9 +101,13 @@ func (c *TcpClient) handleIncoming() {
 }
 
 func (c *TcpClient) handleOutgoing() {
-	logger.Info("handleOutgoing: Starting")
+	logger.Debug("handleOutgoing: Starting")
+	ticker := time.NewTicker(10 * time.Second)
+	var keepAlivePacket s2c.KeepAlive
+
 	defer func() {
-		logger.Info("handleOutgoing: Quitting")
+		logger.Debug("handleOutgoing: Quitting")
+		ticker.Stop()
 		c.wg.Done()
 		go c.Close()
 	}()
@@ -94,8 +115,13 @@ func (c *TcpClient) handleOutgoing() {
 	for {
 		select {
 		case <-c.quit:
-			logger.Debug("Quittin handleOutgoing due to c.quit closed.")
+			logger.Debug("Quitting handleOutgoing due to c.quit closed.")
 			return
+		case timestamp := <-ticker.C:
+			if c.state == network.PLAY {
+				keepAlivePacket.KeepAliveID = dt.Long(timestamp.UTC().UnixNano())
+				c.outgoing <- keepAlivePacket.Bytes()
+			}
 		case msg, ok := <-c.outgoing:
 			if !ok {
 				logger.Debug("Quitting handleOutgoing due to !ok")
