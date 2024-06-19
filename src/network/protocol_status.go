@@ -2,40 +2,40 @@ package network
 
 import (
 	"bytes"
-	"io"
+	"errors"
 	"mango/src/config"
-	"mango/src/network/packet"
+	dt "mango/src/network/datatypes"
 	"mango/src/network/packet/c2s"
 	"mango/src/network/packet/s2c"
 )
 
-func HandleStatusPacket(data *[]byte) []Packet {
-	reader := bytes.NewReader(*data)
+func HandleStatusPacket(data []byte) ([]Packet, error) {
+	r := bytes.NewReader(data)
 
-	var header packet.PacketHeader
-	header.ReadHeader(reader)
+	pid, _, err := dt.ReadVarInt(r)
+	if err != nil {
+		return nil, err
+	}
 
-	reader.Seek(0, io.SeekStart)
-
-	switch header.PacketID {
-	case 0x00: // status packet
-		var statusRequest c2s.StatusRequest
-		statusRequest.ReadPacket(reader)
-
+	switch pid {
+	case 0x00:
 		var statusResponse s2c.StatusResponse
 		statusResponse.StatusData.Protocol = uint16(config.Protocol())
 
-		return []Packet{statusResponse}
+		return []Packet{statusResponse}, nil
 
-	case 0x01: // ping packet
-		var ping c2s.PingRequest
-		ping.ReadPacket(reader)
+	case 0x1:
+		ping, err := c2s.ReadPingPacket(r)
+		if err != nil {
+			return nil, err
+		}
 
 		var pong s2c.PingResponse
 		pong.Timestamp = ping.Timestamp
 
-		return []Packet{pong}
-	}
+		return []Packet{pong}, nil
 
-	return nil
+	default:
+		return nil, errors.New("invalid handshake packet PID")
+	}
 }

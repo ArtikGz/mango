@@ -3,11 +3,9 @@ package c2s
 import (
 	"io"
 	dt "mango/src/network/datatypes"
-	"mango/src/network/packet"
 )
 
 type ClientInformation struct {
-	Header              packet.PacketHeader
 	Locale              dt.String
 	ViewDistance        dt.Byte
 	ChatMode            dt.VarInt
@@ -18,14 +16,31 @@ type ClientInformation struct {
 	AllowServerListing  dt.Boolean
 }
 
-func (ci *ClientInformation) ReadPacket(reader io.Reader) {
-	ci.Header.ReadHeader(reader)
-	ci.Locale.ReadFrom(reader)
-	ci.ViewDistance.ReadFrom(reader)
-	ci.ChatMode.ReadFrom(reader)
-	ci.ChatColors.ReadFrom(reader)
-	ci.DisplayedSkinsPart.ReadFrom(reader)
-	ci.MainHand.ReadFrom(reader)
-	ci.EnableTextFiltering.ReadFrom(reader)
-	ci.AllowServerListing.ReadFrom(reader)
+func ReadClientInformationPacket(r io.Reader) (*ClientInformation, error) {
+	var pk ClientInformation
+	if _, err := pk.Locale.ReadFrom(r); err != nil {
+		return nil, err
+	}
+	if _, err := pk.ViewDistance.ReadFrom(r); err != nil {
+		return nil, err
+	}
+	if _, err := pk.ChatMode.ReadFrom(r); err != nil {
+		return nil, err
+	}
+	if _, err := pk.ChatColors.ReadFrom(r); err != nil {
+		return nil, err
+	}
+	if _, err := pk.DisplayedSkinsPart.ReadFrom(r); err != nil {
+		return nil, err
+	}
+	if _, err := pk.MainHand.ReadFrom(r); err != nil {
+		return nil, err
+	}
+	if _, err := pk.EnableTextFiltering.ReadFrom(r); err != nil {
+		return nil, err
+	}
+	if _, err := pk.AllowServerListing.ReadFrom(r); err != nil {
+		return nil, err
+	}
+	return &pk, nil
 }

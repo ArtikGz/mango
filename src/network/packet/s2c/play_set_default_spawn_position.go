@@ -1,25 +1,21 @@
 package s2c
 
 import (
+	"bytes"
 	dt "mango/src/network/datatypes"
-	"mango/src/network/packet"
 )
 
 type SetDefaultSpawnPosition struct {
-	Header   packet.PacketHeader
 	Location dt.Position
 	Angle    dt.Float
 }
 
 func (pk SetDefaultSpawnPosition) Bytes() []byte {
-	pk.Header.PacketID = 0x50
-	var data []byte
-
-	data = append(data, pk.Location.Bytes()...)
-	data = append(data, pk.Angle.Bytes()...)
-	pk.Header.WriteHeader(&data)
-
-	return data
+	return bytes.Join([][]byte{
+		dt.VarInt(0x50).Bytes(),
+		pk.Location.Bytes(),
+		pk.Angle.Bytes(),
+	}, nil)
 }
 
 func (pk SetDefaultSpawnPosition) Broadcast() bool {

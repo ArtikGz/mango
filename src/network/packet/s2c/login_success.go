@@ -1,34 +1,33 @@
 package s2c
 
 import (
+	"bytes"
+	"encoding/binary"
 	dt "mango/src/network/datatypes"
-	"mango/src/network/packet"
+	"math/rand"
 )
 
 type LoginSuccess struct {
-	Header   packet.PacketHeader
 	Username dt.String
 	UUID     []byte
 }
 
 func (pk LoginSuccess) Bytes() []byte {
-	pk.Header.PacketID = 0x02
-	var data []byte
-
-	if pk.UUID != nil && len(pk.UUID) != 0 {
-		data = append(data, pk.UUID...)
+	var uuid []byte
+	if pk.UUID != nil && len(pk.UUID) == 16 {
+		uuid = pk.UUID
 	} else {
-		uuid1 := dt.Long(0xEDD)
-		uuid2 := dt.Long(0x1337)
-		data = append(data, uuid1.Bytes()...)
-		data = append(data, uuid2.Bytes()...)
+		uuid = make([]byte, 16)
+		binary.BigEndian.PutUint64(uuid[:8], rand.Uint64())
+		binary.BigEndian.PutUint64(uuid[8:], rand.Uint64())
 	}
 
-	data = append(data, pk.Username.Bytes()...)
-	data = append(data, 0x00)
-	pk.Header.WriteHeader(&data)
-
-	return data
+	return bytes.Join([][]byte{
+		dt.VarInt(0x02).Bytes(),
+		uuid,
+		pk.Username.Bytes(),
+		{0x00},
+	}, nil)
 }
 
 func (pk LoginSuccess) Broadcast() bool {

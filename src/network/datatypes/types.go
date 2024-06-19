@@ -172,8 +172,8 @@ func (vi *VarInt) ReadFrom(reader io.Reader) (n int64, err error) {
 	return
 }
 
-func (vi *VarInt) Bytes() (buffer []byte) {
-	value := *vi
+func (vi VarInt) Bytes() (buffer []byte) {
+	value := vi
 
 	for i := 0; i < 5; i++ {
 		var current byte = byte(value & 0x7F)
@@ -244,9 +244,9 @@ func (b *Boolean) ReadFrom(reader io.Reader) (n int64, err error) {
 	return
 }
 
-func (b *Boolean) Bytes() (buffer []byte) {
+func (b Boolean) Bytes() (buffer []byte) {
 	buffer = make([]byte, 1)
-	if *b {
+	if b {
 		buffer[0] = 1
 	} else {
 		buffer[0] = 0

@@ -1,12 +1,11 @@
 package s2c
 
 import (
+	"bytes"
 	dt "mango/src/network/datatypes"
-	"mango/src/network/packet"
 )
 
 type SystemChatMessage struct {
-	Header  packet.PacketHeader
 	Content string // The text message
 	Overlay dt.Boolean
 
@@ -14,17 +13,12 @@ type SystemChatMessage struct {
 }
 
 func (pk SystemChatMessage) Bytes() []byte {
-	pk.Header.PacketID = 0x64
-	var data []byte
-
 	contentJson := dt.String("{\"text\": \"" + pk.Content + "\"}")
-
-	data = append(data, contentJson.Bytes()...)
-	data = append(data, pk.Overlay.Bytes()...)
-
-	pk.Header.WriteHeader(&data)
-
-	return data
+	return bytes.Join([][]byte{
+		dt.VarInt(0x64).Bytes(),
+		contentJson.Bytes(),
+		pk.Overlay.Bytes(),
+	}, nil)
 }
 
 func (pk SystemChatMessage) Broadcast() bool {

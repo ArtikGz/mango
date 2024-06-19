@@ -3,33 +3,35 @@ package network
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"mango/src/config"
 	"mango/src/logger"
 	"mango/src/managers"
-	"mango/src/network/packet"
+	dt "mango/src/network/datatypes"
 	"mango/src/network/packet/c2s"
 	"mango/src/network/packet/s2c"
 )
 
-func HandleLoginPacket(data *[]byte) []Packet {
-	packets := make([]Packet, 0)
+func HandleLoginPacket(data []byte) ([]Packet, error) {
+	var packets []Packet
 
-	reader := bytes.NewReader(*data)
+	r := bytes.NewReader(data)
 
-	var header packet.PacketHeader
-	header.ReadHeader(reader)
+	pid, _, err := dt.ReadVarInt(r)
+	if err != nil {
+		return nil, err
+	}
 
-	reader.Seek(0, io.SeekStart)
-
-	switch header.PacketID {
+	switch pid {
 	case 0x00: // Login Start
-		var loginStart c2s.LoginStart
-		loginStart.ReadPacket(reader)
+
+		loginStart, err := c2s.ReadLoginStartPacket(r)
+		if err != nil {
+			return nil, err
+		}
 
 		if config.IsOnline() {
 			// TODO: implement cypher and return EncryptionRequest
-			logger.Error("Online mod is not yet supported, please, change online to false in '%s'.", config.GetConfigPath())
+			logger.Error("Online mode is not yet supported, please, change online to false in '%s'.", config.GetConfigPath())
 		} else { // Offline mode, return LoginSuccess
 			var loginSuccess s2c.LoginSuccess
 			loginSuccess.Username = loginStart.Name
@@ -50,14 +52,14 @@ func HandleLoginPacket(data *[]byte) []Packet {
 		}
 	}
 
-	return packets
+	return packets, nil
 }
 
 func onSuccessfulLogin() []Packet {
-	packets := make([]Packet, 0)
-
-	packets = append(packets, s2c.LoginPlay{})
-	packets = append(packets, s2c.SetDefaultSpawnPosition{})
+	packets := []Packet{
+		s2c.LoginPlay{},
+		s2c.SetDefaultSpawnPosition{},
+	}
 
 	// send 7X7 chunk square
 	for _, chunkPacket := range managers.GetBlockManager().GetChunks() {

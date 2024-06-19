@@ -1,12 +1,11 @@
 package s2c
 
 import (
+	"bytes"
 	dt "mango/src/network/datatypes"
-	"mango/src/network/packet"
 )
 
 type StatusResponse struct {
-	Header      packet.PacketHeader
 	JsonPayload dt.String
 	StatusData  StatusData
 }
@@ -20,15 +19,12 @@ func (pk StatusResponse) getStatusPayload() string {
 }
 
 func (pk StatusResponse) Bytes() []byte {
-	pk.Header.PacketID = 0x00
 	pk.JsonPayload = dt.String(pk.getStatusPayload())
 
-	var data []byte
-	data = append(data, pk.JsonPayload.Bytes()...)
-
-	pk.Header.WriteHeader(&data)
-
-	return data
+	return bytes.Join([][]byte{
+		dt.VarInt(0x00).Bytes(),
+		pk.JsonPayload.Bytes(),
+	}, nil)
 }
 
 func (pk StatusResponse) Broadcast() bool {

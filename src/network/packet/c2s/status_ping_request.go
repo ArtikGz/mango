@@ -3,15 +3,17 @@ package c2s
 import (
 	"io"
 	dt "mango/src/network/datatypes"
-	"mango/src/network/packet"
 )
 
 type PingRequest struct {
-	Header    packet.PacketHeader
 	Timestamp dt.Long
 }
 
-func (pk *PingRequest) ReadPacket(reader io.Reader) {
-	pk.Header.ReadHeader(reader)
-	pk.Timestamp.ReadFrom(reader)
+func ReadPingPacket(r io.Reader) (*PingRequest, error) {
+	var pk PingRequest
+	if _, err := pk.Timestamp.ReadFrom(r); err != nil {
+		return nil, err
+	}
+
+	return &pk, nil
 }

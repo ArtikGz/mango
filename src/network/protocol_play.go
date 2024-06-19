@@ -5,31 +5,35 @@ import (
 	"io"
 	"mango/src/logger"
 	"mango/src/managers"
-	"mango/src/network/packet"
+	dt "mango/src/network/datatypes"
 	"mango/src/network/packet/c2s"
 	"mango/src/network/packet/s2c"
 )
 
-func HandlePlayPacket(data *[]byte) []Packet {
-	reader := bytes.NewReader(*data)
+func HandlePlayPacket(data []byte) ([]Packet, error) {
+	r := bytes.NewReader(data)
 
-	var header packet.PacketHeader
-	header.ReadHeader(reader)
-
-	logger.Debug("PLAY packet ID: %d", header.PacketID)
-
-	switch header.PacketID {
-	// Player Action
-	case 0x1d:
-		return handlePlayerAction(reader)
+	pid, _, err := dt.ReadVarInt(r)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil
+	logger.Debug("PLAY packet ID: %d", pid)
+
+	switch pid {
+	// Player Action
+	case 0x1d:
+		return handlePlayerAction(r)
+	}
+
+	return nil, nil
 }
 
-func handlePlayerAction(reader io.Reader) []Packet {
-	var pk c2s.PlayerAction
-	pk.ReadPacket(reader)
+func handlePlayerAction(r io.Reader) ([]Packet, error) {
+	pk, err := c2s.ReadPlayerActionPacket(r)
+	if err != nil {
+		return nil, err
+	}
 
 	switch pk.Status {
 	case c2s.ACTION_STATUS_STARTED_DIGGING:
@@ -40,11 +44,11 @@ func handlePlayerAction(reader io.Reader) []Packet {
 		return []Packet{s2c.BlockUpdate{
 			Location: pk.Position,
 			BlockId:  0,
-		}}
+		}}, nil
 	case c2s.ACTION_STATUS_CANCELLED_DIGGING:
 	case c2s.ACTION_STATUS_FINISHED_DIGGING:
 	default:
 	}
 
-	return nil
+	return nil, nil
 }

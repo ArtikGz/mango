@@ -3,26 +3,30 @@ package c2s
 import (
 	"io"
 	dt "mango/src/network/datatypes"
-	"mango/src/network/packet"
 )
 
 type LoginStart struct {
-	Header  packet.PacketHeader
 	Name    dt.String
 	HasUUID dt.Boolean
 	UUID    []byte
 }
 
-func (pk *LoginStart) ReadPacket(reader io.Reader) {
-	pk.Header.ReadHeader(reader)
-	pk.Name.ReadFrom(reader)
+func ReadLoginStartPacket(r io.Reader) (*LoginStart, error) {
+	var pk LoginStart
 
-	pk.HasUUID.ReadFrom(reader)
+	if _, err := pk.Name.ReadFrom(r); err != nil {
+		return nil, err
+	}
+
+	if _, err := pk.HasUUID.ReadFrom(r); err != nil {
+		return nil, err
+	}
 	if pk.HasUUID {
 		pk.UUID = make([]byte, 16)
 
-		if _, err := reader.Read(pk.UUID); err != nil {
-			panic(err)
+		if _, err := r.Read(pk.UUID); err != nil {
+			return nil, err
 		}
 	}
+	return &pk, nil
 }

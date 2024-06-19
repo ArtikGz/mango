@@ -24,9 +24,20 @@ type PlayerAction struct {
 	Sequence dt.VarInt
 }
 
-func (pa *PlayerAction) ReadPacket(reader io.Reader) {
-	pa.Status.ReadFrom(reader)
-	pa.Position.ReadFrom(reader)
-	pa.Face.ReadFrom(reader)
-	pa.Sequence.ReadFrom(reader)
+func ReadPlayerActionPacket(r io.Reader) (*PlayerAction, error) {
+	var pk PlayerAction
+
+	if _, err := pk.Status.ReadFrom(r); err != nil {
+		return nil, err
+	}
+	if _, err := pk.Position.ReadFrom(r); err != nil {
+		return nil, err
+	}
+	if _, err := pk.Face.ReadFrom(r); err != nil {
+		return nil, err
+	}
+	if _, err := pk.Sequence.ReadFrom(r); err != nil {
+		return nil, err
+	}
+	return &pk, nil
 }

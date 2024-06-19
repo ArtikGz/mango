@@ -1,14 +1,13 @@
 package s2c
 
 import (
+	"bytes"
 	"io"
 	dt "mango/src/network/datatypes"
-	"mango/src/network/packet"
 	"os"
 )
 
 type LoginPlay struct {
-	Header              packet.PacketHeader
 	EntityID            dt.Int
 	IsHardcore          dt.Boolean
 	Gamemode            dt.UByte
@@ -42,9 +41,7 @@ func (pk LoginPlay) getStoredPacketBytes() []byte {
 	if err != nil {
 		panic(err)
 	}
-	n := len(arr)
-	length := dt.VarInt(n)
-	return append(length.Bytes(), arr...)
+	return arr
 }
 
 // Loads only the registryCodec bytes
@@ -61,44 +58,46 @@ func (pk LoginPlay) getStoredRegistryBytes() []byte {
 // TODO: use this version at some point
 func (pk *LoginPlay) getRegularBytes() []byte {
 	pk.populatePacket()
-	pk.Header.PacketID = 0x28
-	var data []byte
-	data = append(data, pk.EntityID.Bytes()...)
-	data = append(data, pk.IsHardcore.Bytes()...)
-	data = append(data, pk.Gamemode.Bytes()...)
-	data = append(data, pk.PreviousGamemode.Bytes()...)
 
-	ndims := dt.VarInt(len(pk.DimensionNames))
-	data = append(data, ndims.Bytes()...)
+	dimBytes := dt.VarInt(len(pk.DimensionNames)).Bytes()
 	for _, dim := range pk.DimensionNames {
-		data = append(data, dim.Bytes()...)
+		dimBytes = append(dimBytes, dim.Bytes()...)
 	}
 
-	// data = append(data, pk.RegistryCodec.Bytes()...)
-	data = append(data, pk.getStoredRegistryBytes()...)
-
-	data = append(data, pk.DimensionType.Bytes()...)
-	data = append(data, pk.DimensionName.Bytes()...)
-
-	data = append(data, pk.HashedSeed.Bytes()...)
-	data = append(data, pk.MaxPlayers.Bytes()...)
-
-	data = append(data, pk.ViewDistance.Bytes()...)
-	data = append(data, pk.SimulationDistance.Bytes()...)
-
-	data = append(data, pk.ReducedDebugInfo.Bytes()...)
-	data = append(data, pk.EnableRespawnScreen.Bytes()...)
-	data = append(data, pk.IsDebug.Bytes()...)
-	data = append(data, pk.IsFlat.Bytes()...)
-	data = append(data, pk.HasDeathLocation.Bytes()...)
-
+	var deathLocationBytes []byte
 	if pk.HasDeathLocation {
-		data = append(data, pk.DeathDimensionName.Bytes()...)
-		data = append(data, pk.DeathLocation.Bytes()...)
+		deathLocationBytes = append(pk.DeathDimensionName.Bytes(), pk.DeathLocation.Bytes()...)
 	}
 
-	pk.Header.WriteHeader(&data)
-	return data
+	return bytes.Join([][]byte{
+		dt.VarInt(0x28).Bytes(),
+
+		pk.EntityID.Bytes(),
+		pk.IsHardcore.Bytes(),
+		pk.Gamemode.Bytes(),
+		pk.PreviousGamemode.Bytes(),
+
+		dimBytes,
+
+		pk.getStoredRegistryBytes(),
+
+		pk.DimensionType.Bytes(),
+		pk.DimensionName.Bytes(),
+
+		pk.HashedSeed.Bytes(),
+		pk.MaxPlayers.Bytes(),
+
+		pk.ViewDistance.Bytes(),
+		pk.SimulationDistance.Bytes(),
+
+		pk.ReducedDebugInfo.Bytes(),
+		pk.EnableRespawnScreen.Bytes(),
+		pk.IsDebug.Bytes(),
+		pk.IsFlat.Bytes(),
+		pk.HasDeathLocation.Bytes(),
+
+		deathLocationBytes,
+	}, nil)
 }
 
 func (pk *LoginPlay) populatePacket() {

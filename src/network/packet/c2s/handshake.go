@@ -3,21 +3,28 @@ package c2s
 import (
 	"io"
 	dt "mango/src/network/datatypes"
-	"mango/src/network/packet"
 )
 
 type Handshake struct {
-	Header    packet.PacketHeader
 	Protocol  dt.VarInt
 	Address   dt.String
 	Port      dt.UShort
 	NextState dt.VarInt
 }
 
-func (pk *Handshake) ReadPacket(reader io.Reader) {
-	pk.Header.ReadHeader(reader)
-	pk.Protocol.ReadFrom(reader)
-	pk.Address.ReadFrom(reader)
-	pk.Port.ReadFrom(reader)
-	pk.NextState.ReadFrom(reader)
+func ReadHandshakePacket(r io.Reader) (*Handshake, error) {
+	var pk Handshake
+	if _, err := pk.Protocol.ReadFrom(r); err != nil {
+		return nil, err
+	}
+	if _, err := pk.Address.ReadFrom(r); err != nil {
+		return nil, err
+	}
+	if _, err := pk.Port.ReadFrom(r); err != nil {
+		return nil, err
+	}
+	if _, err := pk.NextState.ReadFrom(r); err != nil {
+		return nil, err
+	}
+	return &pk, nil
 }
