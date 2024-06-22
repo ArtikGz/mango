@@ -10,7 +10,7 @@ import (
 	"mango/src/network/packet/s2c"
 )
 
-func HandlePlayPacket(data []byte) ([]Packet, error) {
+func HandlePlayPacket(username string, data []byte) ([]Packet, error) {
 	r := bytes.NewReader(data)
 
 	pid, _, err := dt.ReadVarInt(r)
@@ -24,6 +24,12 @@ func HandlePlayPacket(data []byte) ([]Packet, error) {
 	// Player Action
 	case 0x1d:
 		return handlePlayerAction(r)
+	case 0x14:
+		return handleSetPlayerPosition(username, r)
+	case 0x15:
+		return handleSetPlayerPositionAndRotation(username, r)
+	case 0x16:
+		return handleSetPlayerRotation(username, r)
 	}
 
 	return nil, nil
@@ -43,7 +49,7 @@ func handlePlayerAction(r io.Reader) ([]Packet, error) {
 
 		return []Packet{s2c.BlockUpdate{
 			Location: pk.Position,
-			BlockId:  0,
+			BlockId:  0, // Air
 		}}, nil
 	case c2s.ACTION_STATUS_CANCELLED_DIGGING:
 	case c2s.ACTION_STATUS_FINISHED_DIGGING:
@@ -51,4 +57,87 @@ func handlePlayerAction(r io.Reader) ([]Packet, error) {
 	}
 
 	return nil, nil
+}
+
+func handleSetPlayerPosition(username string, r io.Reader) ([]Packet, error) {
+	pk, err := c2s.ReadSetPlayerPositionPacket(r)
+	if err != nil {
+		return nil, err
+	}
+
+	user := managers.GetUserManager().GetUser(username)
+	deltaX := calcPositionDiff(user.Position.X, float64(pk.X))
+	deltaY := calcPositionDiff(user.Position.Y, float64(pk.Y))
+	deltaZ := calcPositionDiff(user.Position.Z, float64(pk.Z))
+	logger.Debug("Player (EntityID: %d) position change requested: {%f, %f, %f} -> {%f, %f, %f} (Delta: {%d, %d, %d})", user.EntityId, user.Position.X, user.Position.Y, user.Position.Z, pk.X, pk.Y, pk.Z, deltaX, deltaY, deltaZ)
+
+	user.Position.X = float64(pk.X)
+	user.Position.Y = float64(pk.Y)
+	user.Position.Z = float64(pk.Z)
+	managers.GetUserManager().UpdateUser(user)
+
+	return []Packet{
+		s2c.PlayUpdateEntityPosition{
+			EntityId: dt.VarInt(user.EntityId),
+			DeltaX:   dt.Short(deltaX),
+			DeltaY:   dt.Short(deltaY),
+			DeltaZ:   dt.Short(deltaZ),
+			OnGround: pk.OnGround,
+		},
+	}, nil
+}
+
+func handleSetPlayerPositionAndRotation(username string, r io.Reader) ([]Packet, error) {
+	pk, err := c2s.ReadSetPlayerPositionAndRotationPacket(r)
+	if err != nil {
+		return nil, err
+	}
+
+	user := managers.GetUserManager().GetUser(username)
+	deltaX := calcPositionDiff(user.Position.X, float64(pk.X))
+	deltaY := calcPositionDiff(user.Position.Y, float64(pk.Y))
+	deltaZ := calcPositionDiff(user.Position.Z, float64(pk.Z))
+	// TODO: log this
+	// logger.Debug("Player (EntityID: %d) position and rotation change requested: {%f, %f, %f, %f, %f} -> {%f, %f, %f, %f, %f} (Delta: {%d, %d, %d})", user.EntityId, user.Position.X, user.Position.Y, user.Position.Z, pk.X, pk.Y, pk.Z, deltaX, deltaY, deltaZ)
+
+	user.Position.X = float64(pk.X)
+	user.Position.Y = float64(pk.Y)
+	user.Position.Z = float64(pk.Z)
+	user.Position.Yaw = uint8(pk.Yaw)
+	user.Position.Pitch = uint8(pk.Pitch)
+	managers.GetUserManager().UpdateUser(user)
+
+	return []Packet{
+		s2c.PlayUpdateEntityPositionAndRotation{
+			EntityId: dt.VarInt(user.EntityId),
+			DeltaX:   dt.Short(deltaX),
+			DeltaY:   dt.Short(deltaY),
+			DeltaZ:   dt.Short(deltaZ),
+			Yaw:      pk.Yaw,
+			Pitch:    pk.Pitch,
+			OnGround: pk.OnGround,
+		},
+	}, nil
+}
+
+func handleSetPlayerRotation(username string, r io.Reader) ([]Packet, error) {
+	pk, err := c2s.ReadSetPlayerRotationPacket(r)
+	if err != nil {
+		return nil, err
+	}
+
+	user := managers.GetUserManager().GetUser(username)
+
+	return []Packet{
+		s2c.PlayUpdateEntityRotation{
+			EntityId: dt.VarInt(user.EntityId),
+			Yaw:      dt.UByte(pk.Yaw),
+			Pitch:    dt.UByte(pk.Pitch),
+			OnGround: pk.OnGround,
+		},
+	}, nil
+}
+
+func calcPositionDiff(prevX, newX float64) int16 {
+	return int16((newX*32 - prevX*32) * 128)
 }

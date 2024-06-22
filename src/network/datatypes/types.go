@@ -117,9 +117,9 @@ func (s *String) ReadFrom(reader io.Reader) (n int64, err error) {
 	return
 }
 
-func (s *String) Bytes() (buffer []byte) {
+func (s String) Bytes() (buffer []byte) {
 
-	strBytes := []byte(*s)
+	strBytes := []byte(s)
 	length := VarInt(len(strBytes))
 
 	buffer = append(buffer, length.Bytes()...)
@@ -230,9 +230,9 @@ func (l *Long) ReadFrom(reader io.Reader) (n int64, err error) {
 	return
 }
 
-func (l *Long) Bytes() (buffer []byte) {
+func (l Long) Bytes() (buffer []byte) {
 	buffer = make([]byte, 8)
-	binary.BigEndian.PutUint64(buffer, uint64(*l))
+	binary.BigEndian.PutUint64(buffer, uint64(l))
 	return buffer
 }
 
@@ -281,13 +281,17 @@ func (p *Position) ReadFrom(reader io.Reader) (n int64, err error) {
 }
 
 func (p *Position) Bytes() (buffer []byte) {
-	var value uint64
-	value |= (uint64(p.X) & 0x3FFFFFF) << 38 // x = 26 MSBs
-	value |= (uint64(p.Z) & 0x3FFFFFF) << 12 // z = 26 middle bits
-	value |= uint64(p.Y) & 0xFFF             // y = 12 LSBs
+	var value int64
+	value |= int64((p.X & 0x3FFFFFF) << 38) // x = 26 MSBs
+	value |= int64((p.Z & 0x3FFFFFF) << 12) // z = 26 middle bits
+	value |= int64(p.Y & 0xFFF)             // y = 12 LSBs
 
+	/*
+		buffer = make([]byte, 8)
+		binary.BigEndian.PutUint64(buffer, uint64(value))
+	*/
 	buffer = make([]byte, 8)
-	binary.BigEndian.PutUint64(buffer, value)
+	binary.LittleEndian.PutUint64(buffer, uint64(value))
 	return
 }
 
@@ -306,5 +310,24 @@ func (bs *BitSet) Bytes() (buffer []byte) {
 	}
 
 	buffer = append(buffer, data...)
+	return
+}
+
+type Property struct {
+	Name      String
+	Value     String
+	IsSigned  Boolean
+	Signature String
+}
+
+func (p *Property) Bytes() (buffer []byte) {
+	buffer = append(buffer, p.Name.Bytes()...)
+	buffer = append(buffer, p.Value.Bytes()...)
+
+	buffer = append(buffer, p.IsSigned.Bytes()...)
+	if p.IsSigned {
+		buffer = append(buffer, p.Signature.Bytes()...)
+	}
+
 	return
 }

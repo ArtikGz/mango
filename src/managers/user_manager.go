@@ -1,5 +1,7 @@
 package managers
 
+import "mango/src/logger"
+
 var userManagerInstance UserManager
 
 func init() {
@@ -13,13 +15,36 @@ type UserManager struct {
 }
 
 type User struct {
+	EntityId int32
+	UUID     []byte
+	Position UserPosition
+
 	Name string
 }
 
-func GetUserManager() UserManager {
-	return userManagerInstance
+type UserPosition struct {
+	X     float64
+	Y     float64
+	Z     float64
+	Yaw   uint8
+	Pitch uint8
 }
 
-func (um UserManager) AddUser(user User) {
+func GetUserManager() *UserManager {
+	return &userManagerInstance
+}
+
+func (um *UserManager) AddUser(user User) {
+	logger.Debug("userManager.AddUser() = %+v", user)
+	um.users[user.Name] = user
+}
+
+func (um *UserManager) GetUser(username string) User {
+	logger.Debug("userManager.GetUser() = %+v", um.users[username])
+	return um.users[username]
+}
+
+func (um *UserManager) UpdateUser(user User) {
+	logger.Debug("userManager.UpdateUser() = %+v", user)
 	um.users[user.Name] = user
 }

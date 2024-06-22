@@ -24,7 +24,7 @@ func (p Protocol) String() string {
 	}
 }
 
-func HandlePacket(state Protocol, packet []byte) ([]Packet, error) {
+func HandlePacket(username string, state Protocol, packet []byte) ([]Packet, error) {
 	switch state {
 	case SHAKE:
 		return HandleHandshakePacket(packet)
@@ -33,7 +33,7 @@ func HandlePacket(state Protocol, packet []byte) ([]Packet, error) {
 	case LOGIN:
 		return HandleLoginPacket(packet)
 	case PLAY:
-		return HandlePlayPacket(packet)
+		return HandlePlayPacket(username, packet)
 	default:
 		return nil, nil
 	}

@@ -27,6 +27,8 @@ type TcpClient struct {
 
 	state     network.Protocol
 	emitEvent func(any)
+
+	username string
 }
 
 func NewTcpClient(conn *net.TCPConn) *TcpClient {
@@ -78,7 +80,7 @@ func (c *TcpClient) handleIncoming() {
 			default: // Nothing
 			}
 
-			packets, err := network.HandlePacket(c.state, pkBytes)
+			packets, err := network.HandlePacket(c.username, c.state, pkBytes)
 			if err != nil {
 				logger.Error("Error handling packet from client: %s", err.Error())
 				c.crash = err
@@ -91,6 +93,10 @@ func (c *TcpClient) handleIncoming() {
 						c.emitEvent(BroadcastPacketEvent{n.Bytes()})
 					} else {
 						c.outgoing <- n.Bytes()
+					}
+
+					if lp, ok := packet.(s2c.LoginSuccess); ok {
+						c.username = string(lp.Username)
 					}
 				}
 
