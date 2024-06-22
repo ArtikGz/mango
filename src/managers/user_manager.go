@@ -39,9 +39,12 @@ func (um *UserManager) AddUser(user User) {
 	um.users[user.Name] = user
 }
 
-func (um *UserManager) GetUser(username string) User {
+func (um *UserManager) GetUser(username string) *User {
 	logger.Debug("userManager.GetUser() = %+v", um.users[username])
-	return um.users[username]
+	if user, ok := um.users[username]; ok {
+		return &user
+	}
+	return nil
 }
 
 func (um *UserManager) UpdateUser(user User) {

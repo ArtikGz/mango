@@ -17,7 +17,7 @@ type TcpClient struct {
 	compression int
 
 	incoming chan []byte
-	outgoing chan []byte
+	outgoing chan network.OutgoingPacket
 
 	crash error
 
@@ -31,12 +31,15 @@ type TcpClient struct {
 	username string
 }
 
+func (c *TcpClient) Username() string           { return c.username }
+func (c *TcpClient) Protocol() network.Protocol { return c.state }
+
 func NewTcpClient(conn *net.TCPConn) *TcpClient {
 	c := &TcpClient{
 		conn:        conn,
 		compression: -1,
 		incoming:    make(chan []byte, 128),
-		outgoing:    make(chan []byte, 128),
+		outgoing:    make(chan network.OutgoingPacket, 128),
 		quit:        make(chan struct{}),
 		state:       network.SHAKE,
 	}
@@ -80,7 +83,7 @@ func (c *TcpClient) handleIncoming() {
 			default: // Nothing
 			}
 
-			packets, err := network.HandlePacket(c.username, c.state, pkBytes)
+			packets, err := network.HandlePacket(c, pkBytes)
 			if err != nil {
 				logger.Error("Error handling packet from client: %s", err.Error())
 				c.crash = err
@@ -88,18 +91,16 @@ func (c *TcpClient) handleIncoming() {
 			}
 
 			for _, packet := range packets {
-				if n, ok := packet.(network.OutgoingPacket); ok {
-					if n.Broadcast() {
-						c.emitEvent(BroadcastPacketEvent{n.Bytes()})
+				if outPk, ok := packet.(network.OutgoingPacket); ok {
+					if outPk.Broadcast() {
+						c.emitEvent(BroadcastPacketEvent{outPk})
 					} else {
-						c.outgoing <- n.Bytes()
+						c.outgoing <- outPk
 					}
-
 					if lp, ok := packet.(s2c.LoginSuccess); ok {
 						c.username = string(lp.Username)
 					}
 				}
-
 				c.nextState(packet)
 			}
 		}
@@ -126,19 +127,23 @@ func (c *TcpClient) handleOutgoing() {
 		case timestamp := <-ticker.C:
 			if c.state == network.PLAY {
 				keepAlivePacket.KeepAliveID = dt.Long(timestamp.UTC().UnixNano())
-				c.outgoing <- keepAlivePacket.Bytes()
+				c.outgoing <- keepAlivePacket
 			}
 		case msg, ok := <-c.outgoing:
 			if !ok {
 				logger.Debug("Quitting handleOutgoing due to !ok")
 				return
 			}
-			if err := network.WriteTo(c.conn, msg, c.compression); err != nil {
+			if err := network.WriteTo(c.conn, msg.Bytes(), c.compression); err != nil {
 				logger.Debug("Quitting handleOutgoing due to WriteTo error")
 				c.crash = err
 				return
 			}
-
+			if pk, ok := msg.(s2c.SetCompressionPacket); ok {
+				logger.Info("Client %s setting compression to %v", c.conn.RemoteAddr().String(), pk.Bytes())
+				c.compression = int(pk.Threshold)
+				time.Sleep(50 * time.Millisecond) // sleep 1 tick to ensure the client applies the compression
+			}
 		}
 	}
 }

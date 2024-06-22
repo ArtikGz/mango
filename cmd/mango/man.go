@@ -3,12 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
+	mango "mango/src/network/tcp"
 	"net/http"
 	_ "net/http/pprof"
 
 	"mango/src/config"
 	"mango/src/logger"
-	mango "mango/src/tcp"
 )
 
 var (

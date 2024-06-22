@@ -10,7 +10,7 @@ import (
 	"mango/src/network/packet/s2c"
 )
 
-func HandlePlayPacket(username string, data []byte) ([]Packet, error) {
+func HandlePlayPacket(ctx PacketContext, data []byte) ([]Packet, error) {
 	r := bytes.NewReader(data)
 
 	pid, _, err := dt.ReadVarInt(r)
@@ -25,11 +25,11 @@ func HandlePlayPacket(username string, data []byte) ([]Packet, error) {
 	case 0x1d:
 		return handlePlayerAction(r)
 	case 0x14:
-		return handleSetPlayerPosition(username, r)
+		return handleSetPlayerPosition(ctx, r)
 	case 0x15:
-		return handleSetPlayerPositionAndRotation(username, r)
+		return handleSetPlayerPositionAndRotation(ctx, r)
 	case 0x16:
-		return handleSetPlayerRotation(username, r)
+		return handleSetPlayerRotation(ctx, r)
 	}
 
 	return nil, nil
@@ -59,13 +59,13 @@ func handlePlayerAction(r io.Reader) ([]Packet, error) {
 	return nil, nil
 }
 
-func handleSetPlayerPosition(username string, r io.Reader) ([]Packet, error) {
+func handleSetPlayerPosition(ctx PacketContext, r io.Reader) ([]Packet, error) {
 	pk, err := c2s.ReadSetPlayerPositionPacket(r)
 	if err != nil {
 		return nil, err
 	}
 
-	user := managers.GetUserManager().GetUser(username)
+	user := managers.GetUserManager().GetUser(ctx.Username())
 	deltaX := calcPositionDiff(user.Position.X, float64(pk.X))
 	deltaY := calcPositionDiff(user.Position.Y, float64(pk.Y))
 	deltaZ := calcPositionDiff(user.Position.Z, float64(pk.Z))
@@ -74,7 +74,7 @@ func handleSetPlayerPosition(username string, r io.Reader) ([]Packet, error) {
 	user.Position.X = float64(pk.X)
 	user.Position.Y = float64(pk.Y)
 	user.Position.Z = float64(pk.Z)
-	managers.GetUserManager().UpdateUser(user)
+	managers.GetUserManager().UpdateUser(*user)
 
 	return []Packet{
 		s2c.PlayUpdateEntityPosition{
@@ -87,13 +87,13 @@ func handleSetPlayerPosition(username string, r io.Reader) ([]Packet, error) {
 	}, nil
 }
 
-func handleSetPlayerPositionAndRotation(username string, r io.Reader) ([]Packet, error) {
+func handleSetPlayerPositionAndRotation(ctx PacketContext, r io.Reader) ([]Packet, error) {
 	pk, err := c2s.ReadSetPlayerPositionAndRotationPacket(r)
 	if err != nil {
 		return nil, err
 	}
 
-	user := managers.GetUserManager().GetUser(username)
+	user := managers.GetUserManager().GetUser(ctx.Username())
 	deltaX := calcPositionDiff(user.Position.X, float64(pk.X))
 	deltaY := calcPositionDiff(user.Position.Y, float64(pk.Y))
 	deltaZ := calcPositionDiff(user.Position.Z, float64(pk.Z))
@@ -105,7 +105,7 @@ func handleSetPlayerPositionAndRotation(username string, r io.Reader) ([]Packet,
 	user.Position.Z = float64(pk.Z)
 	user.Position.Yaw = uint8(pk.Yaw)
 	user.Position.Pitch = uint8(pk.Pitch)
-	managers.GetUserManager().UpdateUser(user)
+	managers.GetUserManager().UpdateUser(*user)
 
 	return []Packet{
 		s2c.PlayUpdateEntityPositionAndRotation{
@@ -120,13 +120,13 @@ func handleSetPlayerPositionAndRotation(username string, r io.Reader) ([]Packet,
 	}, nil
 }
 
-func handleSetPlayerRotation(username string, r io.Reader) ([]Packet, error) {
+func handleSetPlayerRotation(ctx PacketContext, r io.Reader) ([]Packet, error) {
 	pk, err := c2s.ReadSetPlayerRotationPacket(r)
 	if err != nil {
 		return nil, err
 	}
 
-	user := managers.GetUserManager().GetUser(username)
+	user := managers.GetUserManager().GetUser(ctx.Username())
 
 	return []Packet{
 		s2c.PlayUpdateEntityRotation{

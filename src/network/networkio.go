@@ -111,15 +111,18 @@ func writeCompressed(w io.Writer, pk []byte, compression int) error {
 
 		copy(buf[:pkLenLen], pkLen.Bytes())
 		buf[pkLenLen] = 0
-		copy(buf[pkLenLen+1:pkLenLen+1+int(pkLen)], pk)
+		copy(buf[pkLenLen+1:pkLenLen+int(pkLen)], pk)
 
 		_, err := w.Write(buf)
 		return err
 	}
 
 	// write compressed packet to buffer
-	compressedBuf := bytes.NewBuffer(make([]byte, len(pk)))
-	zw := zlib.NewWriter(compressedBuf)
+	var compressedBuf bytes.Buffer
+	zw, err := zlib.NewWriterLevel(&compressedBuf, zlib.BestCompression)
+	if err != nil {
+		return err
+	}
 
 	if _, err := zw.Write(pk); err != nil {
 		return err
@@ -140,6 +143,6 @@ func writeCompressed(w io.Writer, pk []byte, compression int) error {
 	copy(buf[pkLenLen:pkLenLen+rawLenLen], rawLen.Bytes())
 	copy(buf[pkLenLen+rawLenLen:], compressedBuf.Bytes())
 
-	_, err := w.Write(buf)
+	_, err = w.Write(buf)
 	return err
 }

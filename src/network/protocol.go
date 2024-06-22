@@ -24,8 +24,13 @@ func (p Protocol) String() string {
 	}
 }
 
-func HandlePacket(username string, state Protocol, packet []byte) ([]Packet, error) {
-	switch state {
+type PacketContext interface {
+	Username() string
+	Protocol() Protocol
+}
+
+func HandlePacket(ctx PacketContext, packet []byte) ([]Packet, error) {
+	switch ctx.Protocol() {
 	case SHAKE:
 		return HandleHandshakePacket(packet)
 	case STATUS:
@@ -33,7 +38,7 @@ func HandlePacket(username string, state Protocol, packet []byte) ([]Packet, err
 	case LOGIN:
 		return HandleLoginPacket(packet)
 	case PLAY:
-		return HandlePlayPacket(username, packet)
+		return HandlePlayPacket(ctx, packet)
 	default:
 		return nil, nil
 	}

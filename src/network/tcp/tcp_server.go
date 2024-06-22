@@ -3,7 +3,6 @@ package tcp
 import (
 	"fmt"
 	"mango/src/logger"
-	"mango/src/network"
 	"net"
 	"sync"
 )
@@ -111,10 +110,7 @@ func (s *TcpServer) eventloop() {
 				}()
 			case BroadcastPacketEvent:
 				for client := range s.clients {
-					err := network.WriteTo(client.conn, event.(BroadcastPacketEvent).packet, client.compression)
-					if err != nil {
-						logger.Error("An error occurred while sending packet to client: %s", err.Error())
-					}
+					client.outgoing <- event.(BroadcastPacketEvent).packet
 				}
 			}
 		}

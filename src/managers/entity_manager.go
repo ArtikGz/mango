@@ -1,6 +1,9 @@
 package managers
 
-import "mango/src/logger"
+import (
+	"mango/src/logger"
+	"sync/atomic"
+)
 
 var entityManagerInstance EntityManager
 
@@ -13,7 +16,7 @@ type EntityManager struct {
 }
 
 func (em *EntityManager) GenerateID() int32 {
-	em.EntityCount++
+	atomic.AddInt32(&em.EntityCount, 1)
 	logger.Debug("EntityID generated: %d", em.EntityCount)
 	return em.EntityCount
 }

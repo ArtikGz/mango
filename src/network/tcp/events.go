@@ -1,6 +1,7 @@
 package tcp
 
 import (
+	"mango/src/network"
 	"net"
 )
 
@@ -21,6 +22,6 @@ type ( // events
 
 type (
 	BroadcastPacketEvent struct {
-		packet []byte
+		packet network.OutgoingPacket
 	}
 )
