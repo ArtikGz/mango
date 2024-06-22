@@ -36,6 +36,10 @@ func Protocol() int {
 	return gconfig.Server.Protocol
 }
 
+func CompressionThreshold() int {
+	return gconfig.Server.CompressionThreshold
+}
+
 func LogLevel() LoggerLevel {
 	switch strings.ToUpper(gconfig.Logger.Level) {
 	case "OFF":
@@ -56,11 +60,12 @@ func LogLevel() LoggerLevel {
 }
 
 type ServerConfig struct {
-	Host     string `json:"host"`
-	Port     int    `json:"port"`
-	Online   bool   `json:"online"`
-	Motd     string `json:"motd"`
-	Protocol int    `json:"protocol"`
+	Host                 string `json:"host"`
+	Port                 int    `json:"port"`
+	Online               bool   `json:"online"`
+	Motd                 string `json:"motd"`
+	Protocol             int    `json:"protocol"`
+	CompressionThreshold int    `json:"compression_threshold"`
 }
 
 type LoggerConfig struct {
@@ -107,11 +112,12 @@ func Parse(path string) error {
 func LoadDefaultConfig() {
 	gconfig = GlobalConfig{
 		Server: ServerConfig{
-			Host:     "127.0.0.1",
-			Port:     25565,
-			Online:   false,
-			Motd:     "Powered by man.go",
-			Protocol: 762,
+			Host:                 "127.0.0.1",
+			Port:                 25565,
+			Online:               false,
+			Motd:                 "Powered by man.go",
+			Protocol:             762,
+			CompressionThreshold: 256,
 		},
 		Logger: LoggerConfig{
 			Level: "INFO",

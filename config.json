@@ -4,7 +4,8 @@
     "port": 25565,
     "online": false,
     "motd": "Powered by man.go",
-    "protocol": 762
+    "protocol": 762,
+    "compression_threshold": 256
   },
   "logger": {
     "level": "DEBUG"
