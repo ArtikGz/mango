@@ -40,7 +40,6 @@ func (um *UserManager) AddUser(user User) {
 }
 
 func (um *UserManager) GetUser(username string) *User {
-	logger.Debug("userManager.GetUser() = %+v", um.users[username])
 	if user, ok := um.users[username]; ok {
 		return &user
 	}
@@ -48,6 +47,5 @@ func (um *UserManager) GetUser(username string) *User {
 }
 
 func (um *UserManager) UpdateUser(user User) {
-	logger.Debug("userManager.UpdateUser() = %+v", user)
 	um.users[user.Name] = user
 }

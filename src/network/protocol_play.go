@@ -74,7 +74,7 @@ func handleSetPlayerPosition(ctx PacketContext, r io.Reader) ([]Packet, error) {
 	deltaX := calcPositionDiff(user.Position.X, float64(pk.X))
 	deltaY := calcPositionDiff(user.Position.Y, float64(pk.Y))
 	deltaZ := calcPositionDiff(user.Position.Z, float64(pk.Z))
-	logger.Debug("Player (EntityID: %d) position change requested: {%f, %f, %f} -> {%f, %f, %f} (Delta: {%d, %d, %d})", user.EntityId, user.Position.X, user.Position.Y, user.Position.Z, pk.X, pk.Y, pk.Z, deltaX, deltaY, deltaZ)
+	//logger.Debug("Player (EntityID: %d) position change requested: {%f, %f, %f} -> {%f, %f, %f} (Delta: {%d, %d, %d})", user.EntityId, user.Position.X, user.Position.Y, user.Position.Z, pk.X, pk.Y, pk.Z, deltaX, deltaY, deltaZ)
 
 	user.Position.X = float64(pk.X)
 	user.Position.Y = float64(pk.Y)
