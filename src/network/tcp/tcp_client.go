@@ -2,6 +2,7 @@ package tcp
 
 import (
 	"io"
+	"mango/src/config"
 	"mango/src/logger"
 	"mango/src/network"
 	dt "mango/src/network/datatypes"
@@ -140,7 +141,7 @@ func (c *TcpClient) handleOutgoing() {
 				return
 			}
 			if pk, ok := msg.(s2c.SetCompressionPacket); ok {
-				logger.Info("Client %s setting compression to %v", c.conn.RemoteAddr().String(), pk.Bytes())
+				logger.Info("Client %s setting compression to %v", c.conn.RemoteAddr().String(), config.CompressionThreshold())
 				c.compression = int(pk.Threshold)
 				time.Sleep(50 * time.Millisecond) // sleep 1 tick to ensure the client applies the compression
 			}

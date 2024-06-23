@@ -30,15 +30,15 @@ func GenerateChunk(pos ChunkPos) *Chunk {
 }
 
 func (c *Chunk) GetSectionAt(pos BlockPos) *Section {
-	return c.Sections[8+pos.Y>>4]
+	return c.Sections[4+pos.Y>>4]
 }
 
 func (c *Chunk) GetBlockAt(pos BlockPos) block.Block {
 	cx, cy, cz := pos.X&15, pos.Y&15, pos.Z&15
-	return c.GetSectionAt(pos).Blocks[cy][cx][cz]
+	return c.GetSectionAt(pos).Blocks[cy][cz][cx]
 }
 
 func (c *Chunk) SetBlockAt(pos BlockPos, block block.Block) {
 	cx, cy, cz := pos.X&15, pos.Y&15, pos.Z&15
-	c.GetSectionAt(pos).Blocks[cy][cx][cz] = block
+	c.GetSectionAt(pos).Blocks[cy][cz][cx] = block
 }

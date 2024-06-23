@@ -106,10 +106,10 @@ func buildDataArray(section world.Section, bitsPerEntry int, palette []dt.VarInt
 	offset := 0
 
 	for y := 0; y < 16; y++ {
-		for x := 0; x < 16; x++ {
-			for z := 0; z < 16; z++ {
+		for z := 0; z < 16; z++ {
+			for x := 0; x < 16; x++ {
 				// map blockID to palette ID
-				id := section.Blocks[y][x][z].ID
+				id := section.Blocks[y][z][x].ID
 				value := int(idMap[dt.VarInt(id)])
 
 				// insert bits into long

@@ -6,12 +6,13 @@ type Block struct {
 }
 
 var (
+	// FIXME: These are not the real IDs
 	AIR      = Block{0, "minecraft:air"}
 	STONE    = Block{1, "minecraft:stone"}
-	ANDESITE = Block{0, "minecraft:andesite"}
-	GRANITE  = Block{0, "minecraft:granite"}
-	DIORITE  = Block{2, "minecraft:diorite"}
-	BEDROCK  = Block{0, "minecraft:bedrock"}
-	DIRT     = Block{0, "minecraft:dirt"}
-	GRASS    = Block{0, "minecraft:grass"}
+	ANDESITE = Block{2, "minecraft:andesite"}
+	GRANITE  = Block{3, "minecraft:granite"}
+	DIORITE  = Block{4, "minecraft:diorite"}
+	BEDROCK  = Block{5, "minecraft:bedrock"}
+	DIRT     = Block{6, "minecraft:dirt"}
+	GRASS    = Block{7, "minecraft:grass"}
 )
