@@ -8,6 +8,7 @@ import (
 	dt "mango/src/network/datatypes"
 	"mango/src/network/packet/c2s"
 	"mango/src/network/packet/s2c"
+	"mango/src/world"
 )
 
 func HandlePlayPacket(ctx PacketContext, data []byte) ([]Packet, error) {
@@ -45,7 +46,11 @@ func handlePlayerAction(r io.Reader) ([]Packet, error) {
 	case c2s.ACTION_STATUS_STARTED_DIGGING:
 		// TODO: Hacer validaciones con respecto a la distancia entre el bloque y el jugador
 		// TODO: Implementar formas de minado distintas para los distintos gamemodes (Que tarde en survival y que no se pueda en adventure)
-		managers.GetBlockManager().RemoveBlockAt(pk.Position.X, pk.Position.Y, pk.Position.Z)
+		world.WorldInstance.RemoveBlock(world.BlockPos{
+			X: pk.Position.X,
+			Y: pk.Position.Y,
+			Z: pk.Position.Z,
+		})
 
 		return []Packet{s2c.BlockUpdate{
 			Location: pk.Position,

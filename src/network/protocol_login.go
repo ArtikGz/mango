@@ -8,8 +8,10 @@ import (
 	"mango/src/logger"
 	"mango/src/managers"
 	dt "mango/src/network/datatypes"
+	"mango/src/network/mappers"
 	"mango/src/network/packet/c2s"
 	"mango/src/network/packet/s2c"
+	"mango/src/world"
 	"math/rand/v2"
 )
 
@@ -144,8 +146,12 @@ func onSuccessfulLogin() []Packet {
 	}
 
 	// send 7X7 chunk square
-	for _, chunkPacket := range managers.GetBlockManager().GetChunks() {
-		packets = append(packets, chunkPacket)
+	radius := 7 / 2
+	for cx := -radius; cx < radius+1; cx++ {
+		for cz := -radius; cz < radius+1; cz++ {
+			chunk := world.WorldInstance.GetChunk(world.ChunkPos{X: cx, Z: cz})
+			packets = append(packets, mappers.MapChunkToPacket(chunk))
+		}
 	}
 
 	return packets
