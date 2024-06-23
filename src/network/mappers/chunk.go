@@ -42,16 +42,16 @@ func mapChunkSection(section world.Section) dt.ChunkSection {
 	switch {
 	case paletteLen == 1: // single
 		BPE = 0
-	//case paletteLen <= 16: // indirect
-	//	BPE = 4
-	//case paletteLen <= 32:
-	//	BPE = 5
-	//case paletteLen <= 64:
-	//	BPE = 6
-	//case paletteLen <= 128:
-	//	BPE = 7
-	//case paletteLen <= 256:
-	//	BPE = 8
+	case paletteLen <= 16: // indirect
+		BPE = 4
+	case paletteLen <= 32:
+		BPE = 5
+	case paletteLen <= 64:
+		BPE = 6
+	case paletteLen <= 128:
+		BPE = 7
+	case paletteLen <= 256:
+		BPE = 8
 	default: // direct
 		BPE = 15
 	}
